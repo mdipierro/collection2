@@ -44,13 +44,14 @@ def api():
                    constraint=(db.book.bookcase<4),
                    keywords_search=complex_search)
     # for logged in users allow POSTing and DELETEing book on the 3rd bookcase.
-    if auth.user:
+    if auth.user or request.is_local:
         # can only post to bookcase 3
         db.book.bookcase.default = 3
         db.book.bookcase.writable = False
         # record who posted it
-        db.book.posted_by.default = auth.user.id
+        db.book.posted_by.default = auth.user_id or 1
         db.book.bookcase.writable = False
+        api.add_policy('book','PUT')
         api.add_policy('book','POST')
         api.add_policy('book','DELETE')
     # respond to API call

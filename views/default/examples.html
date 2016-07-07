@@ -216,8 +216,8 @@ def api()
         # record who posted it
         db.book.posted_by.default = auth.user.id
         db.book.bookcase.writable = False
-        api.add_policy('book','POST')
         api.add_policy('book','PUT')
+        api.add_policy('book','POST')
         api.add_policy('book','DELETE')
           </pre>
         </div>
@@ -226,7 +226,11 @@ def api()
         </div>
         <div class="padded">
           <pre>
-            {row: {id: 91} }
+            {
+              row: {
+                id: 91
+              } 
+            }
           </pre>
         </div>
         <div class="black padded">
@@ -234,9 +238,12 @@ def api()
         </div>
         <div class="padded">
           <pre>
-            {row: {id: 91} }
+            {
+              count: 1
+            }
           </pre>
         </div>
+        <p>Notice PUT returns the number of affected rows, 1 if found 0, otherwise.</p>
         <div class="black padded">
           curl -X DELETE http://127.0.0.1:8000${base}/book/91
         </div>
@@ -245,6 +252,7 @@ def api()
             {count: 1 }
           </pre>
         </div>
+        <p>Notice also DELETE returns the number of affected rows, 1 if found 0, otherwise, but since it is not idempotent, if a first call retruns 1, a second call returns 0.</p>
         <div class="black padded">
           curl -X DELETE http://127.0.0.1:8000${base}/book/91
         </div>

@@ -1,4 +1,6 @@
+import copy
 import json
+import urllib
 
 # table
 # fields for table, referencing, referenced by
@@ -184,9 +186,15 @@ class DBAPI(object):
                     # FIX THIS!!
                     if count and page>1:
                         min_page = min(page-1, (count-1)/per_page+1)
-                        data['previous'] = url+'?page=%i&per_page=%i' % (min_page, per_page)
+                        new_vars = copy.copy(vars)
+                        new_vars.update(page=min_page, per_page=per_page)
+                        q = [k+'='+urllib.quote(str(v)) for k,v in new_vars.iteritems()]
+                        data['previous'] = url+'?'+'&'.join(q)
                     if count and page*per_page<count: 
-                        data['next'] = url+'?page=%i&per_page=%i' % (page+1, per_page)
+                        new_vars = copy.copy(vars)
+                        new_vars.update(page=page+1, per_page=per_page)
+                        q = [k+'='+urllib.quote(str(v)) for k,v in new_vars.iteritems()]
+                        data['next'] = url+'?'+'&'.join(q)
                 elif str(row_id).isdigit():
                     # the user requested an individual record
                     row_id = int(row_id)
@@ -204,55 +212,51 @@ class DBAPI(object):
                         for join_args in policy.get('join') or []:
                             rows.join(**join_args)
                     data = {'row': rows[0]} if rows else {}
-            elif method in ('POST', 'PUT'):
-                if row_id:
-                    # editing an existing record
-                    if str(row_id).isdigit():
-                        table = db[tablename]
-                        policy = policies[tablename][method]
-                        query = table._id==row_id
-                        constraint = policy.get('constraint', None)
-                        if constraint: query = query & constraint
-                        fields = {}
-                        # check user is allowed to post those fields
-                        for key, value in vars.iteritems():
-                            if not key in table.fields or not table[key].writable:
-                                data = {'error':'unable to post field %s' % key, 'status':400}
-                                break
-                            fields[key] = value
-                        else:
-                            try:
-                                n = db(query).update(**fields)
-                                data = {'count':n}
-                            except: pass
+            elif method in 'POST' and not row_id:
+                table = db[tablename]
+                policy = policies[tablename][method]
+                fields = {}
+                for key, value in vars.iteritems():
+                    if not key in table.fields or not table[key].writable:
+                        data = {'error':'unable to post field %s' % key, 'status':400}
+                        break
+                    fields[key] = value
                 else:
-                    table = db[tablename]
-                    policy = policies[tablename][method]
-                    fields = {}
-                    for key, value in vars.iteritems():
-                        if not key in table.fields or not table[key].writable:
-                            data = {'error':'unable to post field %s' % key, 'status':400}
-                            break
-                        fields[key] = value
-                    else:
-                        try:
-                            id = table.insert(**fields)
-                            data = {'row': {'id': id}}
-                        except:
-                            pass
-            elif method == 'DELETE':
-                if row_id:
-                    # delete an existing record
-                    if str(row_id).isdigit():
-                        table = db[tablename]
-                        policy = policies[tablename][method]
-                        query = table._id==row_id
-                        constraint = policy.get('constraint', None)
-                        if constraint: query = query & constraint
-                        try:
-                            n = db(query).delete()
-                            data = {'count':n}
-                        except: pass
+                    try:
+                        id = table.insert(**fields)
+                        data = {'row': {'id': id}}
+                    except:
+                        pass
+            elif method == 'PUT' and row_id and str(row_id).isdigit():
+                # editing an existing record
+                table = db[tablename]
+                policy = policies[tablename][method]
+                query = table._id==row_id
+                constraint = policy.get('constraint', None)
+                if constraint: query = query & constraint
+                fields = {}
+                # check user is allowed to post those fields
+                for key, value in vars.iteritems():
+                    if not key in table.fields or not table[key].writable:
+                        data = {'error':'unable to post field %s' % key, 'status':400}
+                        break
+                    fields[key] = value
+                else:
+                    try:
+                        n = db(query).update(**fields)
+                        data = {'count':n}
+                    except: pass
+            elif method == 'DELETE' and row_id and str(row_id).isdigit():
+                # delete an existing record
+                table = db[tablename]
+                policy = policies[tablename][method]
+                query = table._id==row_id
+                constraint = policy.get('constraint', None)
+                if constraint: query = query & constraint
+                try:
+                    n = db(query).delete()
+                    data = {'count':n}
+                except: pass
             else:
                 data = {'error':'method not allowed', 'status':405}
         return data

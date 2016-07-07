@@ -1,10 +1,19 @@
-$.extend({postJSON: function(url, data, not_async) {
+$.extend({postJSON: function(url, data) {
             var d = {url:url,
                      method:'POST',
+                     data:JSON.stringify(data),
                      contentType: 'application/json',
                      processData: false};
-            if(data) d.data = JSON.stringify(data);
-            if(not_async) d.async = false;
+            return $.ajax(d);
+        }
+    });
+
+$.extend({putJSON: function(url, data) {
+            var d = {url:url,
+                     method:'PUT',
+                     data: JSON.stringify(data),
+                     contentType: 'application/json',
+                     processData: false};
             return $.ajax(d);
         }
     });

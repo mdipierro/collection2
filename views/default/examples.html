@@ -1,0 +1,250 @@
+{{extend 'layout.html'}}
+
+<template id="my-example" v-props="url">
+  <div class="spaced">
+    <div class="black padded">          
+      curl -X GET http://127.0.0.1:8000${url}
+      <button class="right" v-on:click="this.$root.get(url)">Run</button>
+    </div>
+    <div class="silver padded">
+      <pre>${this.$root.responses[url] | json}</pre>
+    </div>
+  </div>
+</template>
+
+<div id="vue">
+  <div class="container max900">
+    <div class="fill">
+      <div class="padded">
+        <h2>DBAPI interface for the web2py and/or pydal</h2>
+        <p>
+          BDAPI is an object allows creating API from database models described in <a href="http://github.com/web2py.pydal">pydal</a>, the default Database Abstraction Layer of <a href="http://web2py.com">web2py</a>.</p>
+        <p>
+          In DBAPI the API are created in terms of policies. A policy specifies:
+          <ul>
+            <li>
+              Which tables are exposed
+            </li>
+            <li>
+              Which fields (*)
+            </li>
+            <li>
+              Which HTTP methods (*)
+            </li>
+            <li>
+              Which searches (*)
+            </li>
+            <li>
+              Which constraints (*) 
+            </li>
+            <li>
+              Which other tables can be joined (*) 
+            </li>
+          </ul>
+          (* = for each table)
+        </p>  
+        Consider the following model file describing books in bookcases and users responsible for creating bookcases and posting individual books in bookcases:
+      </div>
+      <div class="padded">
+        <div class="black padded">          
+          <pre>
+# define the authentication tables
+from gluon.tools import Auth
+auth = Auth(db)
+auth.define_tables()
+
+# define a table bookcase 
+db.define_table(
+    'bookcase',
+    Field('name'),
+    Field('created_by','reference auth_user'))
+
+# define a table book stored in a bookcase
+db.define_table(
+    'book',
+    Field('title'),
+    Field('bookcase','reference bookcase'),
+    Field('posted_by','reference auth_user'))            
+          </pre>
+        </div>
+      </div>
+      <div class="padded">
+        <p>
+          We made up some data with:
+        </p>
+      </div>
+      <div class="padded">
+        <div class="black padded spaced">
+          <pre>
+if db(db.auth_user).isempty():
+    import random
+    from gluon.contrib.populate import populate
+    populate(db.auth_user,10)
+    for name in ('Red','Green','Blue'):
+        db.bookcase.insert(name=name, created_by=random.choice(range(1,11)))
+        populate(db.book,30)
+          </pre>
+        </div>
+      </div>
+      <div class="padded">
+        <p>
+          The API can be exposed creating a controller function (here called "api" but the name can be arbitrary):
+        </p>
+      </div>
+      <div class="padded">
+        <div class="black padded spaced">
+          <pre>
+def api()
+    from dbapi import DBAPI
+    api = DBAPI(db)
+
+    # allow GET for table auth_user
+    api.add_policy('auth_user','GET') 
+
+    # allow GET for table bookcase
+    api.add_policy('bookcase','GET')
+
+    # allow GET on table book
+    api.add_policy('book','GET')
+
+    # respond to API call                                                  
+    return api.process() 
+          </pre>
+        </div>
+        <p>
+          This will automatically expose the following API:
+        </p>
+        <strong>A list of all available tables</strong>
+        <p>Need the "href" attribute provides a template for obtaining more information about each table.</p>
+        <my-example :url="base"></my-example>
+        <strong>A list of methods, fields, their attributes, and examples for each table</strong>
+        <my-example :url="base+'/book/@metadata'"></my-example>
+        <strong>Each record is its own URI</strong>
+        <my-example :url="base+'/book/1'"></my-example>
+        <strong>A list of records</strong>
+        <my-example :url="base+'/book'"></my-example>
+        <strong>Ability to paginate (by max 100 per page)</strong>
+        <p>Notice the "count" attribute always tells the total number of records. "next" and "previous" contain the URLs for the next and previous pages if they exist</p>
+        <my-example :url="base+'/book/?page=1&per_page=5'"></my-example>
+        <strong>Ability to sort</strong>
+        <my-example :url="base+'/book/?sort=title'"></my-example>
+        <strong>Ability to search by any of the exposed fields</strong>
+        <my-example :url="base+'/book/?search=id<5'"></my-example>
+        <strong>Strings and dates must be quoted, AND and most binary operators are allowed</strong>
+        <my-example :url="base+'/book/?search=title contains &quot;the&quot'"></my-example>
+        <p>
+          Notice one can use {field}.readable = False to hide a field.
+          It is possible to defined arbitrary complex queries by keywords:
+        </p>
+        <div class="black padded">
+          <pre>
+    # allow custom complex search on book
+    def complex_search(keywords):
+        return (db.book.title.contains(keywords)|
+                ((db.book.bookcase==db.bookcase.id)&
+                 (db.bookcase.name.contains(keywords))))
+    api.add_policy('book','GET',
+                   constraint=(db.book.bookcase<4),
+                   keywords_search=complex_search)
+          </pre>
+        </div>
+        <my-example :url="base+'/book/?keywords=the'"></my-example>
+        <p>
+          It is also possible to specify that some tables can be joined. 
+          Here join is a list of attributes that are passed to the rows.join(..) method of DAL.
+          The field argument is the "id" field of the table being referenced by the current table.
+        </p>
+        <div class="black padded spaced">
+          <pre>
+    # allow book to automatically join referenced tables
+    def complex_search(keywords):
+        return (db.book.title.contains(keywords)|
+                ((db.book.bookcase==db.bookcase.id)&
+                 (db.bookcase.name.contains(keywords))))
+
+    api.add_policy('book','GET',
+                   join=[dict(field=db.auth_user.id), dict(field=db.bookcase.id)],
+                   constraint=(db.book.bookcase<4),
+                   keywords_search=complex_search)
+          </pre>
+        </div>
+        <p>
+          .. and required joined tables:
+        </p>
+        <my-example :url="base+'/book/1?joined=true'"></my-example>
+        <my-example :url="base+'/book?joined=true'"></my-example>
+        <p>
+          It is also possible to join refencing tables as well as referenced tables.
+          The syntax is the same as above but the field argument of join most be
+          the field of the table referencing the current table (here db.book.bookcase) 
+        </p>
+        <div class="black padded spaced">
+          <pre>
+    # allow bookcase to automatically join referenced and referencing tables
+    api.add_policy('bookcase','GET', join=[
+            dict(field=db.auth_user.id),
+            dict(field=db.book.bookcase)
+            ])
+          </pre>
+        </div>
+        <my-example :url="base+'/bookcase?joined=true'"></my-example>
+        <p>
+          Similarly POST, PUT, and DELETE methods can be allowed.
+          One can use {field}.default to set default values for fields, {field}.writable to prevent writing access to a field.
+        </p>
+        <div class="black padded spaced">
+          <pre>
+    # for logged in users allow POSTing and DELETEing book on the 3rd bookcase.
+    if auth.user:
+        # can only post to bookcase 3
+        db.book.bookcase.default = 3
+        db.book.bookcase.writable = False
+        # record who posted it
+        db.book.posted_by.default = auth.user.id
+        db.book.bookcase.writable = False
+        api.add_policy('book','POST')
+        api.add_policy('book','PUT')
+        api.add_policy('book','DELETE')
+          </pre>
+        </div>
+        <div class="black padded">
+          curl -X POST -d 'bookcase=3&title=GED' http://127.0.0.1:8000${base}/book
+        </div>
+        <div class="padded">
+          <pre>
+            {row: {id: 91} }
+          </pre>
+        </div>
+        <div class="black padded">
+          curl -X PUT -d 'title=Godel Esher Back' http://127.0.0.1:8000${base}/book/91
+        </div>
+        <div class="padded">
+          <pre>
+            {row: {id: 91} }
+          </pre>
+        </div>
+        <div class="black padded">
+          curl -X DELETE -d http://127.0.0.1:8000${base}/book/91
+        </div>
+        <div class="padded">
+          <pre>
+            {count: 1 }
+          </pre>
+        </div>
+        <div class="black padded">
+          curl -X DELETE -d http://127.0.0.1:8000${base}/book/91
+        </div>
+        <div class="padded">
+          <pre>
+            {count: 0 }
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{block bottomjs}}
+<script>{{=ASSIGNJS(URLS={'base':URL('api')})}}</script>
+<script src="{{=URL('static','js/examples-vue.js')}}"><script>
+{{end}}

@@ -1,0 +1,16 @@
+{{extend 'layout.html'}}
+
+<div id="vue">
+  <div class="container max900">
+    <div class="fill">
+      <div class="padded">
+        ${message}
+      </div>
+    </div>
+  </div>
+</div>
+
+{{block bottomjs}}
+<script>{{ASSIGNJS(URLS={'base':URL('x')[:-1]})}}</script>
+<script src="{{=URL('static','js/main-vue.js')}}"><script>
+{{end}}

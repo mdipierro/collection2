@@ -99,7 +99,7 @@ if db(db.auth_user).isempty():
       </div>
       <div class="padded">
         <p>
-          The API can be exposed creating a controller function (here called "api" but the name can be arbitrary, and one can expose different sets of policies with different endpoints):
+          The API can be exposed creating a controller function (here called "api" but the name can be arbitrary, and you can expose different sets of policies with different endpoints):
         </p>
       </div>
       <div class="padded">
@@ -144,7 +144,7 @@ def api()
         <strong>Strings and dates must be quoted, AND and most binary operators are allowed</strong>
         <my-example :url="base+'/book/?search=title contains &quot;the&quot'"></my-example>
         <p>
-          Notice one can use {field}.readable = False to hide a field in the policies.
+          Notice you can use {field}.readable = False to hide a field in the policies.
           It is possible to defined arbitrary complex queries by creating a function that given keywords, returns a search constraints in pydal syntax:
         </p>
         <div class="black padded">
@@ -201,8 +201,8 @@ def api()
         </div>
         <my-example :url="base+'/bookcase?joined=true'"></my-example>
         <p>
-          Similarly other HTTPS methods (POST, PUT, and DELETE) 
-          can be allowed by the policy. One can use {field}.default to set 
+          Similarly other HTTP methods (POST, PUT, and DELETE) 
+          can be allowed by the policy. You can use {field}.default to set 
           default values for fields, {field}.writable to prevent writing 
           access to a field.
         </p>

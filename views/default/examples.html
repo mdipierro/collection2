@@ -18,9 +18,9 @@
       <div class="padded">
         <h2>DBAPI interface for the web2py and/or pydal</h2>
         <p>
-          BDAPI is an object allows creating API from database models described in <a href="http://github.com/web2py.pydal">pydal</a>, the default Database Abstraction Layer of <a href="http://web2py.com">web2py</a>.</p>
+          BDAPI is a system for creating API from database models created with <a href="http://github.com/web2py.pydal">pydal</a>, the default Database Abstraction Layer of <a href="http://web2py.com">web2py</a>.</p>
         <p>
-          In DBAPI the API are created in terms of policies. A policy specifies:
+          In DBAPI the API are created as policies. A policy specifies:
           <ul>
             <li>
               Which tables are exposed
@@ -41,9 +41,14 @@
               Which other tables can be joined (*) 
             </li>
           </ul>
-          (* = for each table)
+          (*) = for each table
         </p>  
+        <p>
+          Policies can depend on the user and can depend on the state of the application. The API is stateless, but the policies are not.
+        </p>
+        <p>
         Consider the following model file describing books in bookcases and users responsible for creating bookcases and posting individual books in bookcases:
+        </p>
       </div>
       <div class="padded">
         <div class="black padded">          
@@ -88,7 +93,7 @@ if db(db.auth_user).isempty():
       </div>
       <div class="padded">
         <p>
-          The API can be exposed creating a controller function (here called "api" but the name can be arbitrary):
+          The API can be exposed creating a controller function (here called "api" but the name can be arbitrary, and one can expose different sets of policies with different endpoints):
         </p>
       </div>
       <div class="padded">
@@ -115,7 +120,7 @@ def api()
           This will automatically expose the following API:
         </p>
         <strong>A list of all available tables</strong>
-        <p>Need the "href" attribute provides a template for obtaining more information about each table.</p>
+        <p>Notice the "href" attribute provides a template for obtaining more information about each table.</p>
         <my-example :url="base"></my-example>
         <strong>A list of methods, fields, their attributes, and examples for each table</strong>
         <my-example :url="base+'/book/@metadata'"></my-example>
@@ -124,7 +129,7 @@ def api()
         <strong>A list of records</strong>
         <my-example :url="base+'/book'"></my-example>
         <strong>Ability to paginate (by max 100 per page)</strong>
-        <p>Notice the "count" attribute always tells the total number of records. "next" and "previous" contain the URLs for the next and previous pages if they exist</p>
+        <p>Notice the "count" attribute which tells the total number of records. "next" and "previous" contain the URLs for the next and previous pages if they exist</p>
         <my-example :url="base+'/book/?page=1&per_page=5'"></my-example>
         <strong>Ability to sort</strong>
         <my-example :url="base+'/book/?sort=title'"></my-example>
@@ -133,8 +138,8 @@ def api()
         <strong>Strings and dates must be quoted, AND and most binary operators are allowed</strong>
         <my-example :url="base+'/book/?search=title contains &quot;the&quot'"></my-example>
         <p>
-          Notice one can use {field}.readable = False to hide a field.
-          It is possible to defined arbitrary complex queries by keywords:
+          Notice one can use {field}.readable = False to hide a field in the policies.
+          It is possible to defined arbitrary complex queries by creating a function that given keywords, returns a search constraints in pydal syntax:
         </p>
         <div class="black padded">
           <pre>
@@ -169,14 +174,15 @@ def api()
           </pre>
         </div>
         <p>
-          .. and required joined tables:
+          Here is a request for the joined tables (technically this is not implemented as a join to allow it to work on Google App Engine that does not support joins, but it is implemented in an efficient manner):
         </p>
         <my-example :url="base+'/book/1?joined=true'"></my-example>
         <my-example :url="base+'/book?joined=true'"></my-example>
         <p>
           It is also possible to join refencing tables as well as referenced tables.
           The syntax is the same as above but the field argument of join most be
-          the field of the table referencing the current table (here db.book.bookcase) 
+          the field of the table referencing the current table 
+          (here db.book.bookcase as opposed to db.book.id) 
         </p>
         <div class="black padded spaced">
           <pre>
@@ -189,8 +195,10 @@ def api()
         </div>
         <my-example :url="base+'/bookcase?joined=true'"></my-example>
         <p>
-          Similarly POST, PUT, and DELETE methods can be allowed.
-          One can use {field}.default to set default values for fields, {field}.writable to prevent writing access to a field.
+          Similarly other HTTPS methods (POST, PUT, and DELETE) 
+          can be allowed by the policy. One can use {field}.default to set 
+          default values for fields, {field}.writable to prevent writing 
+          access to a field.
         </p>
         <div class="black padded spaced">
           <pre>
@@ -224,7 +232,7 @@ def api()
           </pre>
         </div>
         <div class="black padded">
-          curl -X DELETE -d http://127.0.0.1:8000${base}/book/91
+          curl -X DELETE http://127.0.0.1:8000${base}/book/91
         </div>
         <div class="padded">
           <pre>
@@ -232,7 +240,7 @@ def api()
           </pre>
         </div>
         <div class="black padded">
-          curl -X DELETE -d http://127.0.0.1:8000${base}/book/91
+          curl -X DELETE http://127.0.0.1:8000${base}/book/91
         </div>
         <div class="padded">
           <pre>

@@ -16,17 +16,17 @@
   <div class="container max900">
     <div class="fill">
       <div class="padded">
-        <h2>DBAPI interface for the web2py and/or pydal</h2>
+        <h2>APIMaker interface for the web2py and/or pydal</h2>
         <p>
-          BDAPI is a system for creating API from database models created with <a href="http://github.com/web2py/pydal">pydal</a>, the default Database Abstraction Layer of <a href="http://web2py.com">web2py</a>.
+          APIMaker is a system for creating API from database models created with <a href="http://github.com/web2py/pydal">pydal</a>, the default Database Abstraction Layer of <a href="http://web2py.com">web2py</a>.
         </p>
         <div>
-          <a class="btn" href="https://github.com/mdipierro/collection2/blob/master/modules/dbapi.py">Download DBAPI</a>
+          <a class="btn" href="https://github.com/mdipierro/collection2/blob/master/modules/apimaker.py">Download APIMaker</a>
           <a class="btn" href="https://github.com/mdipierro/collection2">Download This Example</a>
           (Requires the latest (trunk) web2py and pydal)
         </div>
         <p>
-          In DBAPI the API are created as policies. A policy specifies:
+          In APIMaker the API are created as policies. A policy specifies:
           <ul>
             <li>
               Which tables are exposed
@@ -106,8 +106,8 @@ if db(db.auth_user).isempty():
         <div class="black padded spaced">
           <pre>
 def api()
-    from dbapi import DBAPI
-    api = DBAPI(db)
+    from apimaker import APIMaker
+    api = APIMaker(db)
 
     # allow GET for table auth_user
     api.add_policy('auth_user','GET') 
@@ -261,6 +261,19 @@ def api()
             {count: 0 }
           </pre>
         </div>
+        <h4>Theoretical considerations</h4>
+        <p>
+          There is a lot of effort in trying to standardize APIs for RESTful architectures through protocols like Collection+JSON, JSON-LD, HAL, and Siren. Some of the tenants of REST is that the API have to be stateless, based on standard methods, self documenting, should present a uniform interface with a unique identifier for resources, and hypermedia (links provided by the API) should be the engine of the application state (HATEOS).
+          </p>
+
+        <p>
+          No restful API fully succeeded in implementing all those requrements and the result of trying to make the API fully self-documenting for machine consumption has results in very complex protocols, difficult to implement, not as general as desirable and yet too general for the existance of a unifrom interface (i.e. a generic client that works solely with the information provided by the API).
+        </p>
+        
+        <p>
+          Our approch here is more practical and we tried to follow a simpler set of principles:
+          ...
+        </p>
       </div>
     </div>
   </div>

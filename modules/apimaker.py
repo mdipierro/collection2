@@ -6,7 +6,7 @@ import urllib
 # fields for table, referencing, referenced by
 # items
 
-class DBAPI(object):
+class APIMaker(object):
 
     MAPS = {'<=':lambda a,b: a<=b,
             '>=':lambda a,b: a>=b,

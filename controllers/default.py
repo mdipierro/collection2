@@ -25,8 +25,8 @@ def api():
     $ curl -X DELETE http://127.0.0.1:8000/collection/default/api/book/93
     {"count": 0}
     """
-    from dbapi import DBAPI
-    api = DBAPI(db)
+    from apimaker import APIMaker
+    api = APIMaker(db)
     # allow GET for table auth_user
     api.add_policy('auth_user','GET')
     # allow GET for table bookstore and allow joining other tables

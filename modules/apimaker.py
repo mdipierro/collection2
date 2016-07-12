@@ -50,10 +50,10 @@ class APIMaker(object):
         for item in items:
             negate = item.startswith('not ')
             if negate: item.strip('not').lstrip()
-            for key in DBAPI.MAPS:
+            for key in APIMaker.MAPS:
                 parts = item.split(key,1)
                 if len(parts)==2:
-                    op = DBAPI.MAPS[key]
+                    op = APIMaker.MAPS[key]
                     try:
                         field = table[parts[0]]
                     except:

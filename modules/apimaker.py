@@ -176,7 +176,7 @@ class APIMaker(object):
                     fields = policy.get('fields', None)
                     if not fields:
                         fields = [f for f in table
-                                  if f.readable and not f.type in ('password','text','blob')]
+                                  if f.readable and not f.type in ('password','blob')]
                     else:
                         fields = [table[f] if isinstance(f,str) else f for f in fields]
                     # get the records
@@ -230,7 +230,7 @@ class APIMaker(object):
                     fields[key] = value
                 else:
                     try:
-                        id = table.insert(**fields)
+                        id = table.validate_and_insert(**fields)
                         data = {'row': {'id': id}}
                     except:
                         pass
@@ -250,7 +250,7 @@ class APIMaker(object):
                     fields[key] = value
                 else:
                     try:
-                        n = db(query).update(**fields)
+                        n = db(query).validate_and_update(**fields)
                         data = {'count':n}
                     except: pass
             elif method == 'DELETE' and row_id and str(row_id).isdigit():
